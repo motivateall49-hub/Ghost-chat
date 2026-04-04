@@ -1,144 +1,307 @@
-<!DOCTYPE html>
+<!<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghost Chat P2P</title>
+    
+    <title>Ghost Chat | Free P2P Anonymous Messaging</title>
+    <meta name="description" content="A 100% free, serverless, peer-to-peer messaging web app. Connect instantly with a secure 6-character code. No sign-ups, no chat logs, total privacy.">
+    <meta name="keywords" content="P2P chat, serverless messaging, anonymous chat, WebRTC chat, disposable chat room, Ayaan Khan web tools">
+    <meta name="author" content="Ayaan Khan">
+
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding-top: 50px; }
-        .container { background: white; width: 90%; max-width: 400px; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
-        .hidden { display: none; }
-        button { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        /* 3. Mobile-Friendly CSS */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f4f4f9; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding-top: 30px; 
+            margin: 0; 
+        }
+        .container { 
+            background: white; 
+            width: 90%; 
+            max-width: 400px; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        .hidden { display: none !important; }
+        
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 15px;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.98); }
         .btn-primary { background: #007bff; color: white; }
         .btn-secondary { background: #6c757d; color: white; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #chat-box { height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background: #fff; text-align: left; display: flex; flex-direction: column; }
-        .msg { padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; max-width: 80%; word-wrap: break-word; }
-        .msg.me { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg.them { background: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
-        #status { font-size: 12px; color: orange; margin-bottom: 10px; font-weight: bold; }
+        
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 15px;
+        }
+        
+        /* Chat UI Updates */
+        #chat-box { 
+            height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #eee; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            background: #fafafa; 
+            text-align: left; 
+            display: flex; 
+            flex-direction: column; 
+            border-radius: 8px;
+        }
+        .msg-wrapper { margin-bottom: 12px; max-width: 85%; display: flex; flex-direction: column; }
+        .msg-wrapper.me { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.them { align-self: flex-start; align-items: flex-start; }
+        
+        .sender-name { font-size: 11px; color: #888; margin-bottom: 3px; padding: 0 4px; font-weight: bold; }
+        .msg { padding: 10px 14px; border-radius: 14px; font-size: 14.5px; word-wrap: break-word; line-height: 1.4; }
+        .msg-wrapper.me .msg { background: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .msg-wrapper.them .msg { background: #e9ecef; color: black; border-bottom-left-radius: 4px; }
+        
+        #status { font-size: 13px; color: orange; margin-bottom: 15px; font-weight: bold; }
+        .profile-badge { background: #f0f2f5; padding: 6px 12px; border-radius: 20px; display: inline-block; font-size: 13px; margin-bottom: 15px; color: #333; font-weight: bold; }
+
+        /* SEO Container Styling */
+        .seo-container {
+            max-width: 500px; 
+            width: 90%;
+            padding: 25px; 
+            color: #555; 
+            text-align: left; 
+            font-size: 14px; 
+            line-height: 1.6; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+            box-sizing: border-box;
+        }
+        .seo-container h2 { color: #333; font-size: 18px; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; margin-top: 0;}
+        .seo-container h3 { color: #333; font-size: 16px; margin-top: 20px;}
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="status">Ready</div>
+    <div class="container">
+        <div id="status">Ready</div>
 
-    <div id="screen-main">
-        <h2>Ghost Chat</h2>
-        <button class="btn-primary" onclick="showCreate()">Create Room</button>
-        <button class="btn-secondary" onclick="showJoin()">Join Room</button>
+        <div id="screen-profile">
+            <h2 style="margin-top: 0;">Set Profile</h2>
+            <p style="font-size: 14px; color: gray;">Enter a display name to continue.</p>
+            <input type="text" id="input-name" placeholder="Your Name" autocomplete="off">
+            <button class="btn-primary" onclick="saveProfile()">Save & Continue</button>
+        </div>
+
+        <div id="screen-main" class="hidden">
+            <div class="profile-badge">👤 <span id="display-profile-name"></span></div>
+            <h2 style="margin-top: 0;">Ghost Chat</h2>
+            <button class="btn-primary" onclick="showCreate()">Create Secure Room</button>
+            <button class="btn-secondary" onclick="showJoin()">Join Room</button>
+        </div>
+
+        <div id="screen-create" class="hidden">
+            <h3 style="margin-top: 0;">Secure Room Code:</h3>
+            <h1 id="display-code" style="color:#007bff; letter-spacing: 5px; margin: 15px 0;">------</h1>
+            <p style="font-size: 13px; color: gray;">Share this code. Waiting for friend...</p>
+        </div>
+
+        <div id="screen-join" class="hidden">
+            <h3 style="margin-top: 0;">Enter Code</h3>
+            <input type="text" id="input-code" placeholder="e.g. A7X9WQ" style="text-transform: uppercase; text-align: center; font-size: 18px; letter-spacing: 2px;" autocomplete="off">
+            <button class="btn-primary" onclick="startJoin()">Connect</button>
+        </div>
+
+        <div id="screen-chat" class="hidden">
+            <div id="chat-box"></div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
+                <button class="btn-primary" style="width: 80px;" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
     </div>
 
-    <div id="screen-create" class="hidden">
-        <h3>Your Room Code:</h3>
-        <h1 id="display-code" style="color:#007bff; letter-spacing: 3px;">----</h1>
-        <p style="font-size: 12px; color: gray;">Connecting to network...</p>
-    </div>
-
-    <div id="screen-join" class="hidden">
-        <h3>Enter Code</h3>
-        <input type="number" id="input-code" placeholder="4-digit code">
-        <button class="btn-primary" onclick="startJoin()">Connect</button>
-    </div>
-
-    <div id="screen-chat" class="hidden">
-        <div id="chat-box"></div>
-        <input type="text" id="msg-input" placeholder="Message...">
-        <button class="btn-primary" onclick="sendMessage()">Send</button>
-    </div>
-</div>
-
-<script>
-    let peer;
-    let conn;
-    let generatedCode;
-
-    function switchScreen(id) {
-        document.querySelectorAll('.container > div:not(#status)').forEach(d => d.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
-    }
-
-    // USER A: Creates the code and waits
-    function showCreate() {
-        generatedCode = Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('display-code').innerText = generatedCode;
-        switchScreen('screen-create');
+    <div class="seo-container">
+        <h2>About Ghost Chat</h2>
+        <p>Ghost Chat is a completely free, <strong>serverless Peer-to-Peer (P2P) messaging application</strong>. It allows two users to connect directly via their web browsers using advanced WebRTC technology, ensuring fast, secure, and private communication.</p>
         
-        document.getElementById('status').innerText = "Starting Room...";
+        <h3>How it Works</h3>
+        <ol style="padding-left: 20px;">
+            <li>One user clicks <strong>Create Secure Room</strong> to generate a unique 6-character code.</li>
+            <li>The second user clicks <strong>Join Room</strong> and enters that exact code.</li>
+            <li>The browsers connect directly to each other. No messages are ever routed through or stored on a central database.</li>
+        </ol>
 
-        // Create a peer with our specific code
-        peer = new Peer('ghost-room-' + generatedCode); 
+        <h3>Frequently Asked Questions</h3>
+        <p><strong>Is my data saved?</strong><br> No. Because this is a serverless web application, there is no database. Once you close the browser window, the chat history is gone forever.</p>
+        <p><strong>Do I need an account?</strong><br> No sign-ups or emails are required. You only provide a local display name that is stored securely on your own device.</p>
         
-        peer.on('open', (id) => {
-            document.getElementById('status').innerText = "● Online (Waiting for friend...)";
-            document.getElementById('status').style.color = "orange";
-        });
+        <p style="text-align: center; margin-top: 25px; font-size: 13px; color: #999;">
+            Developed by Ayan Khan &bull; A serverless web utility tool
+        </p>
+    </div>
 
-        // When User B connects to us
-        peer.on('connection', (connection) => {
-            conn = connection;
-            setupChat();
-        });
-    }
+    <script>
+        let peer;
+        let conn;
+        let generatedCode;
+        let myName = "Anonymous";
 
-    function showJoin() { 
-        switchScreen('screen-join'); 
-    }
+        // --- Profile System (Local Storage) ---
+        window.onload = () => {
+            const savedName = localStorage.getItem('ghost_chat_name');
+            if (savedName) {
+                myName = savedName;
+                document.getElementById('display-profile-name').innerText = myName;
+                switchScreen('screen-main');
+            } else {
+                switchScreen('screen-profile');
+            }
+        };
 
-    // USER B: Enters the code and connects
-    function startJoin() {
-        const code = document.getElementById('input-code').value;
-        if(!code) return alert("Enter code");
+        function saveProfile() {
+            const nameInput = document.getElementById('input-name').value.trim();
+            if (!nameInput) return alert("Please enter a name to continue.");
+            myName = nameInput;
+            localStorage.setItem('ghost_chat_name', myName);
+            document.getElementById('display-profile-name').innerText = myName;
+            switchScreen('screen-main');
+        }
 
-        document.getElementById('status').innerText = "Connecting...";
+        // --- Navigation ---
+        function switchScreen(id) {
+            document.querySelectorAll('.container > div:not(#status)').forEach(d => d.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
 
-        // Create a random peer for the user joining
-        peer = new Peer(); 
-        
-        peer.on('open', () => {
-            // Connect to User A's specific code
-            conn = peer.connect('ghost-room-' + code);
+        // --- Generate 6-Character Secure Code ---
+        function generateSecureCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // --- WebRTC Logic (PeerJS) ---
+        function showCreate() {
+            generatedCode = generateSecureCode();
+            document.getElementById('display-code').innerText = generatedCode;
+            switchScreen('screen-create');
+            document.getElementById('status').innerText = "Starting Room...";
+
+            // Create a node with our specific secure code
+            peer = new Peer('ghost-room-' + generatedCode); 
             
-            conn.on('open', () => {
+            peer.on('open', () => {
+                document.getElementById('status').innerText = "● Online (Waiting...)";
+                document.getElementById('status').style.color = "orange";
+            });
+
+            // Listen for a friend connecting to us
+            peer.on('connection', (connection) => {
+                conn = connection;
                 setupChat();
             });
-        });
-    }
-
-    // Triggered for BOTH users when successfully linked
-    function setupChat() {
-        switchScreen('screen-chat');
-        document.getElementById('status').innerText = "● Chat Connected!";
-        document.getElementById('status').style.color = "green";
-
-        // Listen for incoming messages
-        conn.on('data', (data) => {
-            displayMessage(data, 'them');
-        });
-    }
-
-    function sendMessage() {
-        const input = document.getElementById('msg-input');
-        if(input.value && conn) {
-            // Send to friend
-            conn.send(input.value);
-            // Display on our own screen
-            displayMessage(input.value, 'me');
-            input.value = '';
         }
-    }
 
-    function displayMessage(text, sender) {
-        const d = document.createElement('div');
-        d.className = 'msg ' + sender;
-        d.innerText = text;
-        const chatBox = document.getElementById('chat-box');
-        chatBox.appendChild(d);
-        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
-    }
-</script>
+        function showJoin() { 
+            switchScreen('screen-join'); 
+        }
+
+        function startJoin() {
+            const code = document.getElementById('input-code').value.toUpperCase().trim();
+            if(!code || code.length !== 6) return alert("Please enter a valid 6-character code.");
+
+            document.getElementById('status').innerText = "Connecting...";
+            peer = new Peer(); 
+            
+            peer.on('open', () => {
+                // Try to connect to the friend's specific code
+                conn = peer.connect('ghost-room-' + code);
+                conn.on('open', () => { 
+                    setupChat(); 
+                });
+            });
+        }
+
+        // --- Chat Interface Logic ---
+        function setupChat() {
+            switchScreen('screen-chat');
+            document.getElementById('status').innerText = "● Chat Connected!";
+            document.getElementById('status').style.color = "green";
+
+            // Listen for Enter key on input
+            document.getElementById("msg-input").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Listen for incoming messages from friend
+            conn.on('data', (data) => {
+                displayMessage(data.text, data.senderName, 'them');
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            if(input.value.trim() !== '' && conn) {
+                // Send an object containing both our name and the text
+                const messageData = { senderName: myName, text: input.value };
+                conn.send(messageData);
+                
+                // Display on our own screen immediately
+                displayMessage(input.value, myName, 'me');
+                input.value = '';
+            }
+        }
+
+        function displayMessage(text, senderName, align) {
+            const chatBox = document.getElementById('chat-box');
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'msg-wrapper ' + align;
+            
+            const nameLabel = document.createElement('div');
+            nameLabel.className = 'sender-name';
+            nameLabel.innerText = senderName;
+            
+            const msgBubble = document.createElement('div');
+            msgBubble.className = 'msg';
+            msgBubble.innerText = text;
+            
+            wrapper.appendChild(nameLabel);
+            wrapper.appendChild(msgBubble);
+            chatBox.appendChild(wrapper);
+            
+            // Auto-scroll to the bottom of the chat
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
 </html>
