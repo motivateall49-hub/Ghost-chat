@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghost Chat P2P</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
         body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding-top: 50px; }
@@ -14,15 +14,17 @@
         .btn-primary { background: #007bff; color: white; }
         .btn-secondary { background: #6c757d; color: white; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #chat-box { height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background: #fff; text-align: left; }
-        .msg { background: #e3efff; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
-        #status { font-size: 12px; color: orange; margin-bottom: 10px; }
+        #chat-box { height: 250px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; background: #fff; text-align: left; display: flex; flex-direction: column; }
+        .msg { padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; max-width: 80%; word-wrap: break-word; }
+        .msg.me { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg.them { background: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
+        #status { font-size: 12px; color: orange; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status">Connecting to network...</div>
+    <div id="status">Ready</div>
 
     <div id="screen-main">
         <h2>Ghost Chat</h2>
@@ -31,15 +33,15 @@
     </div>
 
     <div id="screen-create" class="hidden">
-        <h3>Room Code:</h3>
-        <h1 id="display-code" style="color:#007bff">----</h1>
-        <button class="btn-primary" onclick="startChat('create')">Enter Chat</button>
+        <h3>Your Room Code:</h3>
+        <h1 id="display-code" style="color:#007bff; letter-spacing: 3px;">----</h1>
+        <p style="font-size: 12px; color: gray;">Connecting to network...</p>
     </div>
 
     <div id="screen-join" class="hidden">
         <h3>Enter Code</h3>
         <input type="number" id="input-code" placeholder="4-digit code">
-        <button class="btn-primary" onclick="startChat('join')">Connect</button>
+        <button class="btn-primary" onclick="startJoin()">Connect</button>
     </div>
 
     <div id="screen-chat" class="hidden">
@@ -50,59 +52,92 @@
 </div>
 
 <script>
-    // Use multiple relay peers in case one is down
-    const peers = [
-        'https://gun-manhattan.herokuapp.com/gun',
-        'https://peer.wall.org/gun',
-        'https://gun-us.herokuapp.com/gun'
-    ];
-    
-    const gun = Gun(peers);
-    let currentRoom;
+    let peer;
+    let conn;
     let generatedCode;
-
-    // Status check
-    gun.on('hi', () => {
-        document.getElementById('status').innerText = "● Online (Connected)";
-        document.getElementById('status').style.color = "green";
-    });
-
-    function showCreate() {
-        generatedCode = Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('display-code').innerText = generatedCode;
-        switchScreen('screen-create');
-    }
-
-    function showJoin() { switchScreen('screen-join'); }
 
     function switchScreen(id) {
         document.querySelectorAll('.container > div:not(#status)').forEach(d => d.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
     }
 
-    function startChat(mode) {
-        const code = (mode === 'create') ? generatedCode : document.getElementById('input-code').value;
+    // USER A: Creates the code and waits
+    function showCreate() {
+        generatedCode = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('display-code').innerText = generatedCode;
+        switchScreen('screen-create');
+        
+        document.getElementById('status').innerText = "Starting Room...";
+
+        // Create a peer with our specific code
+        peer = new Peer('ghost-room-' + generatedCode); 
+        
+        peer.on('open', (id) => {
+            document.getElementById('status').innerText = "● Online (Waiting for friend...)";
+            document.getElementById('status').style.color = "orange";
+        });
+
+        // When User B connects to us
+        peer.on('connection', (connection) => {
+            conn = connection;
+            setupChat();
+        });
+    }
+
+    function showJoin() { 
+        switchScreen('screen-join'); 
+    }
+
+    // USER B: Enters the code and connects
+    function startJoin() {
+        const code = document.getElementById('input-code').value;
         if(!code) return alert("Enter code");
 
-        currentRoom = gun.get('room-p2p-' + code);
-        switchScreen('screen-chat');
+        document.getElementById('status').innerText = "Connecting...";
 
-        currentRoom.map().on((data) => {
-            if(data && data.text) {
-                const d = document.createElement('div');
-                d.className = 'msg';
-                d.innerText = data.text;
-                document.getElementById('chat-box').appendChild(d);
-            }
+        // Create a random peer for the user joining
+        peer = new Peer(); 
+        
+        peer.on('open', () => {
+            // Connect to User A's specific code
+            conn = peer.connect('ghost-room-' + code);
+            
+            conn.on('open', () => {
+                setupChat();
+            });
+        });
+    }
+
+    // Triggered for BOTH users when successfully linked
+    function setupChat() {
+        switchScreen('screen-chat');
+        document.getElementById('status').innerText = "● Chat Connected!";
+        document.getElementById('status').style.color = "green";
+
+        // Listen for incoming messages
+        conn.on('data', (data) => {
+            displayMessage(data, 'them');
         });
     }
 
     function sendMessage() {
-        const i = document.getElementById('msg-input');
-        if(i.value && currentRoom) {
-            currentRoom.set({ text: i.value });
-            i.value = '';
+        const input = document.getElementById('msg-input');
+        if(input.value && conn) {
+            // Send to friend
+            conn.send(input.value);
+            // Display on our own screen
+            displayMessage(input.value, 'me');
+            input.value = '';
         }
+    }
+
+    function displayMessage(text, sender) {
+        const d = document.createElement('div');
+        d.className = 'msg ' + sender;
+        d.innerText = text;
+        const chatBox = document.getElementById('chat-box');
+        chatBox.appendChild(d);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
     }
 </script>
 </body>
