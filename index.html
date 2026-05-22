@@ -3,7 +3,7 @@
 <head>
     <meta name="google-site-verification" content="0tJlKX1Yx8rzx-9YV9FUFO2l9AvgGanCfQZzKqUcdjk" />
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>Ghost Chat | Free P2P Anonymous Messaging</title>
     <meta name="description" content="A 100% free, serverless, peer-to-peer messaging web app. Connect instantly with a secure 6-character code. No sign-ups, no chat logs, total privacy.">
@@ -89,6 +89,8 @@
             text-align: center; 
             margin-bottom: 30px;
             transition: 0.3s;
+            display: flex;
+            flex-direction: column;
         }
         
         .hidden { display: none !important; }
@@ -121,25 +123,34 @@
         }
         
         /* Chat UI Updates */
+        #screen-chat {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
         .chat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            flex-shrink: 0;
         }
         .chat-header h3 { margin: 0; }
         
         #chat-box { 
-            height: 300px; 
+            flex-grow: 1; /* Pushes the input area to the bottom */
+            height: 300px; /* Default height when not in full screen */
             overflow-y: auto; 
             border: 1px solid var(--chat-border); 
             padding: 10px; 
-            margin-bottom: 10px; 
             background: var(--chat-bg); 
             text-align: left; 
             display: flex; 
             flex-direction: column; 
             border-radius: 8px;
+            scrollbar-width: thin;
         }
         .msg-wrapper { margin-bottom: 12px; max-width: 85%; display: flex; flex-direction: column; }
         .msg-wrapper.me { align-self: flex-end; align-items: flex-end; }
@@ -150,25 +161,32 @@
         .msg-wrapper.me .msg { background: #007bff; color: white; border-bottom-right-radius: 4px; }
         .msg-wrapper.them .msg { background: var(--msg-them-bg); color: var(--msg-them-color); border-bottom-left-radius: 4px; }
         
+        .input-group {
+            display: flex; 
+            gap: 8px; 
+            flex-shrink: 0; /* Prevents input from shrinking when chat fills up */
+            padding-top: 10px;
+        }
+
         #status { font-size: 13px; color: orange; margin-bottom: 15px; font-weight: bold; }
         .profile-badge { background: var(--badge-bg); padding: 6px 12px; border-radius: 20px; display: inline-block; font-size: 13px; margin-bottom: 15px; color: var(--text-color); font-weight: bold; }
 
-        /* Full Screen Chat Mode */
+        /* Full Screen Chat Mode with Mobile Keyboard Support */
         .container.full-screen {
             position: fixed;
             top: 0; left: 0;
             width: 100%; max-width: 100%;
-            height: 100vh;
+            height: 100vh; /* Fallback for older browsers */
+            height: 100dvh; /* Dynamic Viewport Height: perfectly handles mobile keyboard */
             margin: 0; border-radius: 0;
-            display: flex; flex-direction: column;
+            padding: 15px; /* Slight padding for screen edges */
             z-index: 9999;
             box-sizing: border-box;
         }
-        .container.full-screen #screen-chat {
-            display: flex; flex-direction: column; flex-grow: 1; height: 100%;
-        }
+        
         .container.full-screen #chat-box {
-            flex-grow: 1; height: auto;
+            height: auto; /* Let flex-grow take over */
+            border-radius: 4px;
         }
 
         /* SEO Container Styling */
@@ -231,7 +249,7 @@
                 <button class="icon-btn" id="fullscreen-toggle" onclick="toggleFullScreen()" title="Full Screen" style="width: 35px; height: 35px; border:none; box-shadow:none; background:transparent;">⛶</button>
             </div>
             <div id="chat-box"></div>
-            <div style="display: flex; gap: 8px;">
+            <div class="input-group">
                 <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
                 <button class="btn-primary" style="width: 80px;" onclick="sendMessage()">Send</button>
             </div>
@@ -279,10 +297,21 @@
             const isFull = container.classList.contains('full-screen');
             document.getElementById('fullscreen-toggle').innerText = isFull ? '✖' : '⛶';
             
+            // Prevent background scrolling when in full screen
+            document.body.style.overflow = isFull ? 'hidden' : 'auto';
+            
             // Scroll to bottom when resizing
             const chatBox = document.getElementById('chat-box');
             chatBox.scrollTop = chatBox.scrollHeight;
         }
+
+        // Auto-scroll when keyboard opens on mobile
+        window.visualViewport.addEventListener('resize', () => {
+            const chatBox = document.getElementById('chat-box');
+            setTimeout(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 100);
+        });
 
         // --- Profile System (Local Storage) ---
         window.onload = () => {
@@ -422,6 +451,3 @@
     </script>
 </body>
 </html>
-
-        
-        
