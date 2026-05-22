@@ -3,7 +3,8 @@
 <head>
     <meta name="google-site-verification" content="0tJlKX1Yx8rzx-9YV9FUFO2l9AvgGanCfQZzKqUcdjk" />
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Viewport settings strictly prevent zooming and scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, interactive-widget=resizes-content">
     
     <title>Ghost Chat | Free P2P Anonymous Messaging</title>
     <meta name="description" content="A 100% free, serverless, peer-to-peer messaging web app. Connect instantly with a secure 6-character code. No sign-ups, no chat logs, total privacy.">
@@ -55,6 +56,18 @@
             padding-top: 50px; 
             margin: 0; 
             transition: background 0.3s;
+            /* Prevent overscroll bounce on mobile */
+            overscroll-behavior-y: none;
+        }
+
+        /* Hides everything else when maximized */
+        body.is-maximized {
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+        body.is-maximized .top-bar, 
+        body.is-maximized .seo-container {
+            display: none !important;
         }
 
         /* Top Controls */
@@ -91,6 +104,7 @@
             transition: 0.3s;
             display: flex;
             flex-direction: column;
+            box-sizing: border-box;
         }
         
         .hidden { display: none !important; }
@@ -140,8 +154,8 @@
         .chat-header h3 { margin: 0; }
         
         #chat-box { 
-            flex-grow: 1; /* Pushes the input area to the bottom */
-            height: 300px; /* Default height when not in full screen */
+            flex-grow: 1; 
+            height: 300px; 
             overflow-y: auto; 
             border: 1px solid var(--chat-border); 
             padding: 10px; 
@@ -164,28 +178,30 @@
         .input-group {
             display: flex; 
             gap: 8px; 
-            flex-shrink: 0; /* Prevents input from shrinking when chat fills up */
+            flex-shrink: 0; 
             padding-top: 10px;
         }
 
         #status { font-size: 13px; color: orange; margin-bottom: 15px; font-weight: bold; }
         .profile-badge { background: var(--badge-bg); padding: 6px 12px; border-radius: 20px; display: inline-block; font-size: 13px; margin-bottom: 15px; color: var(--text-color); font-weight: bold; }
 
-        /* Full Screen Chat Mode with Mobile Keyboard Support */
+        /* Full Screen Chat Mode - Truly Lock to Viewport */
         .container.full-screen {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; max-width: 100%;
-            height: 100vh; /* Fallback for older browsers */
-            height: 100dvh; /* Dynamic Viewport Height: perfectly handles mobile keyboard */
-            margin: 0; border-radius: 0;
-            padding: 15px; /* Slight padding for screen edges */
+            top: 0; 
+            left: 0;
+            width: 100vw; 
+            max-width: 100vw;
+            margin: 0; 
+            border-radius: 0;
+            padding: 15px; 
             z-index: 9999;
-            box-sizing: border-box;
+            /* Height is managed by JS visualViewport for pixel-perfect mobile keyboard support */
+            height: 100dvh; 
         }
         
         .container.full-screen #chat-box {
-            height: auto; /* Let flex-grow take over */
+            height: auto; 
             border-radius: 4px;
         }
 
@@ -290,28 +306,58 @@
             localStorage.setItem('ghost_chat_dark', isDark);
         }
 
-        // --- Full Screen Logic ---
+        // --- Full Screen & Mobile Keyboard Logic ---
         function toggleFullScreen() {
             const container = document.getElementById('main-app-container');
+            
+            // Toggle classes
+            document.body.classList.toggle('is-maximized');
             container.classList.toggle('full-screen');
+            
             const isFull = container.classList.contains('full-screen');
             document.getElementById('fullscreen-toggle').innerText = isFull ? '✖' : '⛶';
             
-            // Prevent background scrolling when in full screen
-            document.body.style.overflow = isFull ? 'hidden' : 'auto';
+            // Reset height to default if exiting full screen
+            if (!isFull) {
+                container.style.height = 'auto';
+            } else {
+                updateViewportHeight();
+            }
             
             // Scroll to bottom when resizing
             const chatBox = document.getElementById('chat-box');
-            chatBox.scrollTop = chatBox.scrollHeight;
+            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
         }
 
-        // Auto-scroll when keyboard opens on mobile
-        window.visualViewport.addEventListener('resize', () => {
-            const chatBox = document.getElementById('chat-box');
-            setTimeout(() => {
+        // Dynamically adjust height exactly to visual viewport (bypasses browser URL bar and keyboard issues)
+        function updateViewportHeight() {
+            const container = document.getElementById('main-app-container');
+            if (container.classList.contains('full-screen') && window.visualViewport) {
+                // Lock height exactly to visible area above keyboard
+                container.style.height = window.visualViewport.height + 'px';
+                
+                // Force scroll to top so browser doesn't offset our absolute positioning
+                window.scrollTo(0, 0); 
+                
+                const chatBox = document.getElementById('chat-box');
                 chatBox.scrollTop = chatBox.scrollHeight;
-            }, 100);
-        });
+            }
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateViewportHeight);
+            window.visualViewport.addEventListener('scroll', updateViewportHeight);
+        }
+
+        // Prevent body scrolling when touching the background in full screen
+        document.body.addEventListener('touchmove', function(e) {
+            if (document.body.classList.contains('is-maximized')) {
+                // Only allow scrolling inside the chat-box
+                if (!e.target.closest('#chat-box')) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
 
         // --- Profile System (Local Storage) ---
         window.onload = () => {
