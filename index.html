@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     
-    <title>Ghost Chat | Secure Messaging</title>
+    <title>Ghost Chat | Free P2P Anonymous Messaging</title>
+    <meta name="description" content="A 100% free, serverless, peer-to-peer messaging web app. Connect instantly with a secure 6-character code. No sign-ups, no chat logs, total privacy.">
+    <meta name="keywords" content="P2P chat, serverless messaging, anonymous chat, WebRTC chat, disposable chat room, Ayan Khan web tools">
+    <meta name="author" content="Ayan Khan">
 
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
@@ -48,6 +51,7 @@
             align-items: center;
             height: 100vh;
             height: 100dvh;
+            overflow: hidden;
             transition: background 0.3s;
         }
 
@@ -59,6 +63,7 @@
             flex-direction: column;
             background: var(--container-bg);
             box-shadow: 0 4px 20px var(--shadow);
+            position: relative;
             overflow: hidden;
         }
 
@@ -75,23 +80,19 @@
             border-bottom: 1px solid var(--input-bg);
             z-index: 10;
         }
+        
+        .brand-container { display: flex; align-items: baseline; gap: 12px; }
         .brand { font-weight: 700; font-size: 16px; color: var(--accent-color); }
+        .about-link { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; font-weight: 600; transition: color 0.2s;}
+        .about-link:hover { color: var(--accent-color); }
+
         #status { font-size: 12px; color: #e67e22; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: var(--input-bg); transition: 0.3s; }
         .status-disconnected { color: white !important; background: var(--danger-color) !important; }
 
         .icon-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            padding: 0;
-            transition: 0.2s;
+            background: transparent; border: none; cursor: pointer; color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+            border-radius: 50%; padding: 0; transition: 0.2s;
         }
         .icon-btn:hover { background: var(--input-bg); }
 
@@ -113,16 +114,16 @@
         .msg-wrapper.me { align-self: flex-end; }
         .msg-wrapper.them { align-self: flex-start; }
         
-        .sender-name { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; font-weight: 600; }
+        .sender-name { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; font-weight: 600; width: 100%; }
+        .msg-wrapper.me .sender-name { text-align: right; }
+        .msg-wrapper.them .sender-name { text-align: left; }
+
         .msg { padding: 8px 12px; border-radius: 12px; font-size: 15px; word-break: break-word; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
         .msg-wrapper.me .msg { background: var(--msg-me-bg); border-top-right-radius: 4px; }
         .msg-wrapper.them .msg { background: var(--msg-them-bg); border-top-left-radius: 4px; }
 
         .media-item-container { position: relative; overflow: hidden; border-radius: 8px; display: inline-block; user-select: none; -webkit-user-select: none; }
-        
-        /* Fixed Video Zooming - Changed to contain */
         .file-preview { max-width: 100%; max-height: 250px; display: block; object-fit: contain; background: #000; }
-        
         .file-download-card { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.05); padding: 10px; text-decoration: none; color: inherit; font-size: 14px; min-width: 150px; }
         
         .file-transfer-ui { padding: 10px 14px; background: var(--input-bg); border-radius: 8px; min-width: 180px; font-size: 14px; color: var(--text-color); border: 1px solid rgba(0,0,0,0.05);}
@@ -147,13 +148,60 @@
         .send-btn { color: var(--accent-color); padding: 6px; }
         .send-btn svg { width: 20px; height: 20px; transform: translateX(2px); }
         #file-input { display: none; }
+
+        #screen-about { position: relative; justify-content: flex-start; padding: 0; }
+        
+        #anim-container {
+            position: absolute; inset: 0; display: flex; justify-content: center; align-items: center;
+            background: var(--container-bg); z-index: 50; overflow: hidden;
+            transition: opacity 0.5s ease;
+        }
+        
+        .anim-heart {
+            position: absolute; bottom: -30px; font-size: 24px; opacity: 0;
+            animation: floatUp 2.5s ease-in forwards;
+        }
+        
+        .anim-name {
+            font-size: 38px; font-weight: 800; color: var(--accent-color); opacity: 0;
+            text-align: center; padding: 0 20px;
+            text-shadow: 0 4px 15px rgba(0, 168, 132, 0.3);
+            animation: popBounce 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards, fadeOutText 0.5s ease 2.2s forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-80vh) scale(1.5) rotate(45deg); opacity: 0; }
+        }
+        
+        @keyframes popBounce {
+            0% { transform: scale(0.2); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeOutText { to { opacity: 0; transform: scale(0.9); } }
+
+        .about-content {
+            padding: 30px 24px; text-align: left; width: 100%; height: 100%; overflow-y: auto; opacity: 0;
+            animation: fadeInContent 0.5s ease 2.5s forwards;
+        }
+        
+        @keyframes fadeInContent { to { opacity: 1; } }
+
+        .about-content h2 { color: var(--text-color); font-size: 22px; border-bottom: 2px solid var(--input-bg); padding-bottom: 10px; margin-top: 0;}
+        .about-content h3 { color: var(--text-color); font-size: 16px; margin-top: 24px;}
+        .about-content p, .about-content li { color: var(--text-muted); font-size: 14.5px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
     <div class="app-wrapper">
         <div class="top-bar">
-            <div class="brand">Ghost Chat</div>
+            <div class="brand-container">
+                <div class="brand">Ghost Chat</div>
+                <button class="about-link" onclick="triggerAboutAnimation()">About</button>
+            </div>
             <div style="display: flex; gap: 8px; align-items: center;">
                 <div id="status">Setup</div>
                 <button class="icon-btn" id="dark-toggle" onclick="toggleDarkMode()">
@@ -202,6 +250,31 @@
                 </button>
             </div>
         </div>
+
+        <div id="screen-about" class="screen hidden">
+            <div id="anim-container"></div>
+            
+            <div class="about-content">
+                <button class="about-link" onclick="closeAbout()" style="margin-bottom: 20px; font-size: 14px;">&larr; Back</button>
+                <h2 id="about-welcome-text">About Ghost Chat</h2>
+                <p>Ghost Chat is a completely free, <strong>serverless Peer-to-Peer (P2P) messaging web application</strong>. It allows two users to connect directly via their web browsers using advanced WebRTC technology, ensuring fast, secure, and private communication.</p>
+                
+                <h3>How it Works</h3>
+                <ol style="padding-left: 20px;">
+                    <li>One user clicks <strong>Create Secure Room</strong> to generate a unique 6-character code.</li>
+                    <li>The second user clicks <strong>Join Room</strong> and enters that exact code.</li>
+                    <li>The browsers connect directly to each other. No messages are ever routed through or stored on a central database.</li>
+                </ol>
+
+                <h3>Frequently Asked Questions</h3>
+                <p><strong>Is my data saved?</strong><br> No. Because this is a serverless web application, there is no database. Once you close the browser window, the chat history is gone forever.</p>
+                <p><strong>Do I need an account?</strong><br> No sign-ups or emails are required. You only provide a local display name that is stored securely on your own device.</p>
+                
+                <p style="text-align: center; margin-top: 35px; font-size: 13px; color: var(--text-muted);">
+                    Developed by Ayan Khan &bull; A serverless web utility tool
+                </p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -210,11 +283,27 @@
         let myName = "Anonymous";
         let typingTimeout = null;
         let isTypingLocal = false;
+        let previousScreen = 'screen-main';
 
         let localFileUrls = {}; 
         let receiveBuffers = {};
         let receiveMeta = {};
         let receiveBytes = {};
+
+        // Comprehensive Global ICE Servers Configuration for cross-platform (Windows & Apple)
+        const webRtcConfig = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:stun.apple.com:19302' } // Vital for Apple ecosystem handshakes
+                ],
+                sdpSemantics: 'unified-plan'
+            }
+        };
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -241,6 +330,10 @@
         }
 
         function switchScreen(id) {
+            const currentActive = document.querySelector('.screen:not(.hidden)');
+            if(currentActive && currentActive.id !== 'screen-about') {
+                previousScreen = currentActive.id;
+            }
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
@@ -259,15 +352,48 @@
             else statusEl.style.color = '';
         }
 
-        // IMPROVED Symmetric Disconnect Handling
         function handleDisconnect() {
             updateConnectionStatus("Disconnected", "status-disconnected");
             document.getElementById('typing-indicator').innerText = "Connection lost.";
-            // Safety: Ensure sending loop breaks
             if(conn) conn.open = false; 
         }
 
         window.addEventListener('offline', handleDisconnect);
+
+        function triggerAboutAnimation() {
+            switchScreen('screen-about');
+            const animContainer = document.getElementById('anim-container');
+            const welcomeText = document.getElementById('about-welcome-text');
+            let displayName = myName === "Anonymous" ? "Friend" : myName;
+            welcomeText.innerText = `Welcome, ${displayName}!`;
+
+            animContainer.innerHTML = '';
+            animContainer.style.display = 'flex';
+            animContainer.style.opacity = '1';
+
+            const symbols = ['❤️', '✨', '💖', '🔥', '🎉'];
+            for (let i = 0; i < 35; i++) {
+                let particle = document.createElement('div');
+                particle.className = 'anim-heart';
+                particle.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+                particle.style.left = Math.random() * 90 + 5 + '%';
+                particle.style.animationDelay = (Math.random() * 1.5) + 's';
+                particle.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                animContainer.appendChild(particle);
+            }
+
+            let namePop = document.createElement('div');
+            namePop.className = 'anim-name';
+            namePop.innerText = displayName;
+            animContainer.appendChild(namePop);
+
+            setTimeout(() => {
+                animContainer.style.opacity = '0';
+                setTimeout(() => { animContainer.style.display = 'none'; }, 500);
+            }, 2700);
+        }
+
+        function closeAbout() { switchScreen(previousScreen); }
 
         function showCreate() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -277,11 +403,11 @@
             switchScreen('screen-create');
             updateConnectionStatus("Opening...", "");
 
-            peer = new Peer('ghost-room-' + code, { config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
+            // Initializing with global ICE Servers configuration mapping
+            peer = new Peer('ghost-room-' + code, webRtcConfig);
             peer.on('open', () => updateConnectionStatus("Waiting...", ""));
             peer.on('connection', connection => { conn = connection; bindConnectionEvents(); });
             
-            // Monitor local peer disconnect
             peer.on('disconnected', handleDisconnect);
             peer.on('error', handleDisconnect);
         }
@@ -293,8 +419,9 @@
             if (code.length !== 6) return;
 
             updateConnectionStatus("Connecting...", "");
-            peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
+            peer = new Peer(webRtcConfig);
             peer.on('open', () => { 
+                // Removed manual overrides to allow clean WebKit/Chromium negotiation
                 conn = peer.connect('ghost-room-' + code); 
                 bindConnectionEvents(); 
             });
@@ -310,7 +437,6 @@
                 document.getElementById('msg-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
             });
 
-            // Symmetric: These trigger for BOTH parties when the data channel dies
             conn.on('close', handleDisconnect);
             conn.on('error', handleDisconnect);
 
@@ -381,29 +507,29 @@
             conn.send({ type: 'file-meta', id: msgId, sender: myName, fileName: file.name, fileType: file.type, size: file.size });
 
             const buffer = await file.arrayBuffer();
-            const chunkSize = 16 * 1024; 
+            const chunkSize = 64 * 1024; 
             let offset = 0;
 
             try {
                 while (offset < buffer.byteLength) {
-                    // SENDER SIDE DISCONNECT CHECK
                     if (!conn || !conn.open) { 
                         updateFileProgress(msgId, 0, "Transfer Failed - Disconnected", true); 
-                        handleDisconnect(); // Trigger UI disconnect for sender too
+                        handleDisconnect(); 
                         return; 
                     }
                     
-                    if (conn.dataChannel && conn.dataChannel.bufferedAmount > 65536) {
-                        await new Promise(r => setTimeout(r, 30)); 
-                        continue;
+                    while (conn.dataChannel && conn.dataChannel.bufferedAmount > 256 * 1024) {
+                        await new Promise(r => setTimeout(r, 5)); 
                     }
 
                     const chunk = buffer.slice(offset, offset + chunkSize);
                     conn.send({ type: 'file-chunk', id: msgId, data: chunk });
                     offset += chunkSize;
 
-                    const percent = Math.round((offset / buffer.byteLength) * 100);
-                    updateFileProgress(msgId, percent, `Uploading ${percent}%`);
+                    if (offset % (chunkSize * 10) === 0 || offset >= buffer.byteLength) {
+                        const percent = Math.round((offset / buffer.byteLength) * 100);
+                        updateFileProgress(msgId, percent, `Uploading ${percent}%`);
+                    }
                 }
                 conn.send({ type: 'file-end', id: msgId });
                 updateFileProgress(msgId, 100, "Processing..."); 
