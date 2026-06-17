@@ -118,9 +118,13 @@
         .msg-wrapper.me .sender-name { text-align: right; }
         .msg-wrapper.them .sender-name { text-align: left; }
 
-        .msg { padding: 8px 12px; border-radius: 12px; font-size: 15px; word-break: break-word; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        .msg { display: flex; flex-direction: row; align-items: flex-end; padding: 6px 10px 8px 12px; border-radius: 12px; font-size: 15px; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.05); gap: 8px; }
+        .msg-text { text-align: left; flex: 1; word-break: break-word; }
         .msg-wrapper.me .msg { background: var(--msg-me-bg); border-top-right-radius: 4px; }
         .msg-wrapper.them .msg { background: var(--msg-them-bg); border-top-left-radius: 4px; }
+
+        .msg-ticks { font-size: 11px; color: #999; font-weight: bold; letter-spacing: -1px; margin-bottom: -2px; flex-shrink: 0; }
+        .tick-read { color: #34B7F1; } 
 
         .media-item-container { position: relative; overflow: hidden; border-radius: 8px; display: inline-block; user-select: none; -webkit-user-select: none; }
         .file-preview { max-width: 100%; max-height: 250px; display: block; object-fit: contain; background: #000; }
@@ -151,42 +155,58 @@
 
         #screen-about { position: relative; justify-content: flex-start; padding: 0; }
         
+        .back-btn {
+            background: var(--input-bg); color: var(--text-color); border: none; padding: 10px 20px;
+            border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer;
+            margin-bottom: 24px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .back-btn:hover { background: var(--text-muted); color: white; }
+
         #anim-container {
             position: absolute; inset: 0; display: flex; justify-content: center; align-items: center;
-            background: var(--container-bg); z-index: 50; overflow: hidden;
-            transition: opacity 0.5s ease;
-        }
-        
-        .anim-heart {
-            position: absolute; bottom: -30px; font-size: 24px; opacity: 0;
-            animation: floatUp 2.5s ease-in forwards;
-        }
-        
-        .anim-name {
-            font-size: 38px; font-weight: 800; color: var(--accent-color); opacity: 0;
-            text-align: center; padding: 0 20px;
-            text-shadow: 0 4px 15px rgba(0, 168, 132, 0.3);
-            animation: popBounce 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards, fadeOutText 0.5s ease 2.2s forwards;
+            background: var(--container-bg); z-index: 50; overflow: hidden; transition: opacity 0.5s ease;
         }
 
+        .anim-orb {
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
+            opacity: 0; filter: blur(8px);
+            animation: floatOrb 4s ease-in-out forwards;
+        }
+        .name-ripple {
+            position: absolute; width: 100px; height: 100px; background: var(--accent-color);
+            border-radius: 50%; z-index: 1; opacity: 0;
+            animation: rippleEffect 1.5s ease-out 0.5s forwards;
+        }
+        .anim-heart { position: absolute; bottom: -30px; opacity: 0; z-index: 2; animation: floatUp 3s ease-in forwards; }
+        
+        .anim-name {
+            font-size: 42px; font-weight: 800; color: var(--accent-color); opacity: 0; text-align: center; padding: 0 20px;
+            text-shadow: 0 4px 20px rgba(0, 168, 132, 0.4); z-index: 3;
+            animation: popBounce 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards, fadeOutText 0.5s ease 2.5s forwards;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translateY(0) scale(0.5); opacity: 0.3; }
+            100% { transform: translateY(-100vh) scale(2.5); opacity: 0; }
+        }
+        @keyframes rippleEffect {
+            0% { transform: scale(0.5); opacity: 0.6; }
+            100% { transform: scale(4); opacity: 0; }
+        }
         @keyframes floatUp {
             0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-80vh) scale(1.5) rotate(45deg); opacity: 0; }
+            50% { transform: translateY(-40vh) scale(1.2) rotate(180deg); opacity: 1; }
+            100% { transform: translateY(-90vh) scale(1.5) rotate(360deg); opacity: 0; }
         }
-        
         @keyframes popBounce {
             0% { transform: scale(0.2); opacity: 0; }
             50% { transform: scale(1.1); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
-
         @keyframes fadeOutText { to { opacity: 0; transform: scale(0.9); } }
 
-        .about-content {
-            padding: 30px 24px; text-align: left; width: 100%; height: 100%; overflow-y: auto; opacity: 0;
-            animation: fadeInContent 0.5s ease 2.5s forwards;
-        }
-        
+        .about-content { padding: 30px 24px; text-align: left; width: 100%; height: 100%; overflow-y: auto; opacity: 0; animation: fadeInContent 0.5s ease 2.8s forwards; }
         @keyframes fadeInContent { to { opacity: 1; } }
 
         .about-content h2 { color: var(--text-color); font-size: 22px; border-bottom: 2px solid var(--input-bg); padding-bottom: 10px; margin-top: 0;}
@@ -253,9 +273,11 @@
 
         <div id="screen-about" class="screen hidden">
             <div id="anim-container"></div>
-            
             <div class="about-content">
-                <button class="about-link" onclick="closeAbout()" style="margin-bottom: 20px; font-size: 14px;">&larr; Back</button>
+                <button class="back-btn" onclick="closeAbout()">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg>
+                    Back to Chat
+                </button>
                 <h2 id="about-welcome-text">About Ghost Chat</h2>
                 <p>Ghost Chat is a completely free, <strong>serverless Peer-to-Peer (P2P) messaging web application</strong>. It allows two users to connect directly via their web browsers using advanced WebRTC technology, ensuring fast, secure, and private communication.</p>
                 
@@ -284,24 +306,23 @@
         let typingTimeout = null;
         let isTypingLocal = false;
         let previousScreen = 'screen-main';
+        
+        let keepAliveTimer = null; 
+        let unreadMessages = [];   
 
         let localFileUrls = {}; 
         let receiveBuffers = {};
         let receiveMeta = {};
         let receiveBytes = {};
 
-        // Comprehensive Global ICE Servers Configuration for cross-platform (Windows & Apple)
         const webRtcConfig = {
             config: {
                 iceServers: [
+                    { urls: 'stun:stun.cloudflare.com:3478' },
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:stun.apple.com:19302' } // Vital for Apple ecosystem handshakes
-                ],
-                sdpSemantics: 'unified-plan'
+                    { urls: 'stun:stun.apple.com:19302' }
+                ]
             }
         };
 
@@ -339,6 +360,7 @@
         }
 
         function resetApp() {
+            clearInterval(keepAliveTimer);
             if (peer) peer.destroy();
             updateConnectionStatus("Ready", "");
             switchScreen('screen-main');
@@ -353,8 +375,9 @@
         }
 
         function handleDisconnect() {
+            clearInterval(keepAliveTimer);
             updateConnectionStatus("Disconnected", "status-disconnected");
-            document.getElementById('typing-indicator').innerText = "Connection lost.";
+            document.getElementById('typing-indicator').innerText = "Connection lost. Please refresh.";
             if(conn) conn.open = false; 
         }
 
@@ -367,18 +390,32 @@
             let displayName = myName === "Anonymous" ? "Friend" : myName;
             welcomeText.innerText = `Welcome, ${displayName}!`;
 
-            animContainer.innerHTML = '';
+            animContainer.innerHTML = '<div class="name-ripple"></div>';
             animContainer.style.display = 'flex';
             animContainer.style.opacity = '1';
 
-            const symbols = ['❤️', '✨', '💖', '🔥', '🎉'];
-            for (let i = 0; i < 35; i++) {
+            // Glowing Orbs
+            for(let j = 0; j < 8; j++) {
+                let orb = document.createElement('div');
+                orb.className = 'anim-orb';
+                orb.style.left = Math.random() * 90 + '%';
+                orb.style.bottom = '-100px';
+                orb.style.width = (Math.random() * 80 + 40) + 'px';
+                orb.style.height = orb.style.width;
+                orb.style.animationDelay = (Math.random() * 1.5) + 's';
+                animContainer.appendChild(orb);
+            }
+
+            // Floating Symbols
+            const symbols = ['❤️', '✨', '💖', '🔥', '🎉', '🌟', '💥', '🎈'];
+            for (let i = 0; i < 50; i++) {
                 let particle = document.createElement('div');
                 particle.className = 'anim-heart';
                 particle.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-                particle.style.left = Math.random() * 90 + 5 + '%';
-                particle.style.animationDelay = (Math.random() * 1.5) + 's';
-                particle.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                particle.style.left = Math.random() * 95 + '%';
+                particle.style.animationDelay = (Math.random() * 2) + 's';
+                particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                particle.style.fontSize = (Math.random() * 20 + 15) + 'px';
                 animContainer.appendChild(particle);
             }
 
@@ -390,7 +427,7 @@
             setTimeout(() => {
                 animContainer.style.opacity = '0';
                 setTimeout(() => { animContainer.style.display = 'none'; }, 500);
-            }, 2700);
+            }, 3000);
         }
 
         function closeAbout() { switchScreen(previousScreen); }
@@ -403,11 +440,9 @@
             switchScreen('screen-create');
             updateConnectionStatus("Opening...", "");
 
-            // Initializing with global ICE Servers configuration mapping
             peer = new Peer('ghost-room-' + code, webRtcConfig);
             peer.on('open', () => updateConnectionStatus("Waiting...", ""));
             peer.on('connection', connection => { conn = connection; bindConnectionEvents(); });
-            
             peer.on('disconnected', handleDisconnect);
             peer.on('error', handleDisconnect);
         }
@@ -421,56 +456,106 @@
             updateConnectionStatus("Connecting...", "");
             peer = new Peer(webRtcConfig);
             peer.on('open', () => { 
-                // Removed manual overrides to allow clean WebKit/Chromium negotiation
                 conn = peer.connect('ghost-room-' + code); 
                 bindConnectionEvents(); 
             });
-            
             peer.on('disconnected', handleDisconnect);
             peer.on('error', handleDisconnect);
         }
+
+        window.addEventListener('focus', () => {
+            if (conn && conn.open && unreadMessages.length > 0) {
+                unreadMessages.forEach(id => conn.send({ type: 'delivery-ack', id: id, status: 'read' }));
+                unreadMessages = [];
+            }
+        });
 
         function bindConnectionEvents() {
             conn.on('open', () => {
                 switchScreen('screen-chat');
                 updateConnectionStatus("Connected", "");
                 document.getElementById('msg-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+                
+                keepAliveTimer = setInterval(() => {
+                    if (conn && conn.open) conn.send({ type: 'ping' });
+                }, 15000);
             });
 
             conn.on('close', handleDisconnect);
             conn.on('error', handleDisconnect);
 
             conn.on('data', data => {
+                if (data.type === 'ping') { conn.send({ type: 'pong' }); return; }
+                if (data.type === 'pong') return; 
+
                 if (data.align) data.align = 'them';
 
                 if (data.type === 'text') {
                     displayTextMessage(data);
-                } else if (data.type === 'typing') {
+                    if (document.hasFocus()) {
+                        conn.send({ type: 'delivery-ack', id: data.id, status: 'read' });
+                    } else {
+                        conn.send({ type: 'delivery-ack', id: data.id, status: 'delivered' });
+                        unreadMessages.push(data.id);
+                    }
+                } 
+                else if (data.type === 'delivery-ack') {
+                    const tickEl = document.getElementById('tick-' + data.id);
+                    if (tickEl) {
+                        if (data.status === 'delivered' && tickEl.innerText === '✓') {
+                            tickEl.innerText = '✓✓';
+                        } else if (data.status === 'read') {
+                            tickEl.innerText = '✓✓';
+                            tickEl.classList.add('tick-read');
+                        }
+                    }
+                }
+                else if (data.type === 'typing') {
                     document.getElementById('typing-indicator').innerText = data.isTyping ? `${data.sender} is typing...` : '';
-                } else if (data.type === 'delete') {
+                } 
+                else if (data.type === 'delete') {
                     const target = document.getElementById(data.messageId);
                     if (target) target.remove();
                 } 
                 else if (data.type === 'file-meta') {
                     receiveMeta[data.id] = data;
+                    receiveMeta[data.id].receivedCount = 0; // Initialize precise chunk tracker
                     receiveBuffers[data.id] = [];
                     receiveBytes[data.id] = 0;
                     displayFileTransferUI(data.id, data.fileName, 'them', 'Receiving...');
-                } else if (data.type === 'file-chunk') {
+                } 
+                else if (data.type === 'file-chunk') {
                     if (!receiveBuffers[data.id]) return;
-                    receiveBuffers[data.id].push(data.data);
-                    receiveBytes[data.id] += data.data.byteLength;
                     
-                    const percent = Math.round((receiveBytes[data.id] / receiveMeta[data.id].size) * 100);
-                    updateFileProgress(data.id, percent, `Downloading ${percent}%`);
-                } else if (data.type === 'file-end') {
-                    const meta = receiveMeta[data.id];
-                    const blob = new Blob(receiveBuffers[data.id], { type: meta.fileType });
-                    const blobUrl = URL.createObjectURL(blob);
-                    renderCompletedMedia(data.id, blobUrl, meta.fileName, meta.fileType);
-                    conn.send({ type: 'file-ack', id: data.id });
-                    delete receiveBuffers[data.id]; delete receiveMeta[data.id]; delete receiveBytes[data.id];
-                } else if (data.type === 'file-ack') {
+                    // 100% PERFECT ASYNC ALIGNMENT: Forces mathematical chunk ordering 
+                    receiveBuffers[data.id][data.index] = data.data;
+                    receiveBytes[data.id] += data.data.byteLength;
+                    receiveMeta[data.id].receivedCount++;
+
+                    // Limit UI updates slightly to prevent browser freezing during high speeds
+                    if (receiveMeta[data.id].receivedCount % 20 === 0 || receiveMeta[data.id].receivedCount === data.total) {
+                        const percent = Math.round((receiveMeta[data.id].receivedCount / data.total) * 100);
+                        updateFileProgress(data.id, percent, `Downloading ${percent}%`);
+                    }
+
+                    // Strict Mathematical Completion Check (Eliminates File Corruption)
+                    if (receiveMeta[data.id].receivedCount === data.total) {
+                        const meta = receiveMeta[data.id];
+                        const blob = new Blob(receiveBuffers[data.id], { type: meta.fileType });
+                        const blobUrl = URL.createObjectURL(blob);
+                        renderCompletedMedia(data.id, blobUrl, meta.fileName, meta.fileType);
+                        
+                        conn.send({ type: 'file-ack', id: data.id });
+                        if(document.hasFocus()) conn.send({ type: 'delivery-ack', id: data.id, status: 'read' });
+                        else {
+                            conn.send({ type: 'delivery-ack', id: data.id, status: 'delivered' });
+                            unreadMessages.push(data.id);
+                        }
+
+                        delete receiveBuffers[data.id]; delete receiveMeta[data.id]; delete receiveBytes[data.id];
+                    }
+                } 
+                else if (data.type === 'file-ack') {
                     const localData = localFileUrls[data.id];
                     if (localData) renderCompletedMedia(data.id, localData.url, localData.fileName, localData.fileType);
                 }
@@ -504,34 +589,44 @@
             const msgId = 'msg-' + Date.now();
             localFileUrls[msgId] = { url: URL.createObjectURL(file), fileName: file.name, fileType: file.type };
             displayFileTransferUI(msgId, file.name, 'me', 'Preparing...');
+            
+            const buffer = await file.arrayBuffer();
+            // LOWERED to universally stable WebRTC SCTP limit (16KB)
+            const chunkSize = 16 * 1024; 
+            const totalChunks = Math.ceil(buffer.byteLength / chunkSize);
+
             conn.send({ type: 'file-meta', id: msgId, sender: myName, fileName: file.name, fileType: file.type, size: file.size });
 
-            const buffer = await file.arrayBuffer();
-            const chunkSize = 64 * 1024; 
-            let offset = 0;
-
             try {
-                while (offset < buffer.byteLength) {
+                for (let i = 0; i < totalChunks; i++) {
                     if (!conn || !conn.open) { 
                         updateFileProgress(msgId, 0, "Transfer Failed - Disconnected", true); 
                         handleDisconnect(); 
                         return; 
                     }
                     
-                    while (conn.dataChannel && conn.dataChannel.bufferedAmount > 256 * 1024) {
+                    // Throttle down to 64KB backpressure for ultimate packet stability
+                    while (conn.dataChannel && conn.dataChannel.bufferedAmount > 64 * 1024) {
                         await new Promise(r => setTimeout(r, 5)); 
                     }
-
+                    
+                    const offset = i * chunkSize;
                     const chunk = buffer.slice(offset, offset + chunkSize);
-                    conn.send({ type: 'file-chunk', id: msgId, data: chunk });
-                    offset += chunkSize;
+                    
+                    conn.send({ 
+                        type: 'file-chunk', 
+                        id: msgId, 
+                        data: chunk,
+                        index: i,
+                        total: totalChunks
+                    });
 
-                    if (offset % (chunkSize * 10) === 0 || offset >= buffer.byteLength) {
-                        const percent = Math.round((offset / buffer.byteLength) * 100);
+                    // Update UI gracefully
+                    if (i % 20 === 0 || i === totalChunks - 1) {
+                        const percent = Math.round(((i + 1) / totalChunks) * 100);
                         updateFileProgress(msgId, percent, `Uploading ${percent}%`);
                     }
                 }
-                conn.send({ type: 'file-end', id: msgId });
                 updateFileProgress(msgId, 100, "Processing..."); 
 
             } catch (err) {
@@ -553,9 +648,21 @@
 
             const msgBubble = document.createElement('div');
             msgBubble.className = 'msg';
-            msgBubble.innerText = packet.text;
-            wrapper.appendChild(msgBubble);
             
+            const textWrap = document.createElement('span');
+            textWrap.className = 'msg-text';
+            textWrap.innerText = packet.text;
+            msgBubble.appendChild(textWrap);
+
+            if (packet.align === 'me') {
+                const tickWrap = document.createElement('span');
+                tickWrap.className = 'msg-ticks';
+                tickWrap.id = 'tick-' + packet.id;
+                tickWrap.innerText = '✓';
+                msgBubble.appendChild(tickWrap);
+            }
+            
+            wrapper.appendChild(msgBubble);
             chatBox.appendChild(wrapper);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
@@ -579,10 +686,12 @@
                 <div class="file-transfer-ui">
                     <div style="margin-bottom: 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📄 ${fileName}</div>
                     <div class="progress-bar"><div class="progress-fill" id="fill-${msgId}"></div></div>
-                    <div class="status-text" id="status-${msgId}">${initialStatus}</div>
+                    <div style="display:flex; justify-content: space-between; align-items: flex-end;">
+                        <span class="status-text" id="status-${msgId}">${initialStatus}</span>
+                        ${align === 'me' ? `<span class="msg-ticks" id="tick-${msgId}" style="margin:0;">✓</span>` : ''}
+                    </div>
                 </div>
             `;
-            
             wrapper.appendChild(mediaWrap);
             chatBox.appendChild(wrapper);
             chatBox.scrollTop = chatBox.scrollHeight;
